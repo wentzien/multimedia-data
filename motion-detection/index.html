@@ -6,14 +6,31 @@
 </head>
 <body>
 <video id="webcam-video"></video>
+
+<canvas id="motion-canvas"></canvas>
+<canvas id="capture-canvas"></canvas>
+<canvas id="diff-canvas"></canvas>
+
 <script src="MotionDetection.js"></script>
+
+<span id="motion-score">???</span>
 <script>
-  const webcamVideo = document.getElementById("webcam-video");
-  settings = {
-    video: webcamVideo
-  };
-  const motionDetection = new MotionDetection(settings);
-  motionDetection.start();
+    const webcamVideo = document.getElementById("webcam-video");
+    const motionCanvas = document.getElementById("motion-canvas");
+    const captureCanvas = document.getElementById("capture-canvas");
+    const diffCanvas = document.getElementById("diff-canvas");
+    const motionScore = document.getElementById("motion-score");
+
+    settings = {
+        videoRef: webcamVideo,
+        motionCanvasRef: motionCanvas,
+        captureCanvasRef: captureCanvas,
+        diffCanvasRef: diffCanvas,
+        scoreRef: motionScore
+    };
+
+    const motionDetection = new MotionDetection(settings);
+    motionDetection.start();
 </script>
 </body>
 </html>
