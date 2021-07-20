@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<video id="webcam-video"></video>
+<script src="MotionDetection.js"></script>
+<script>
+  const webcamVideo = document.getElementById("webcam-video");
+  settings = {
+    video: webcamVideo
+  };
+  const motionDetection = new MotionDetection(settings);
+  motionDetection.start();
+</script>
+</body>
+</html>
