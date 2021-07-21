@@ -1,27 +1,30 @@
 const MotionDetection = class {
     constructor(settings) {
         this.stream = null;
-        this.video = settings.videoRef;
+        this.video = settings.videoRef || document.createElement("video");
         this.oldCapturedImage = false;
 
-        this.settings = {};
-        this.settings.captureIntervalTime = 64;
-        this.settings.frameWidth = 400;
-        this.settings.frameHeight = 300;
+        this.settings = {
+            captureIntervalTime: settings.captureIntervalTime || 100,
+            frameWidth: settings.frameWidth || 400,
+            frameHeight: settings.frameHeight || 300
+        };
 
         const {frameWidth, frameHeight} = this.settings;
 
         this.settings.pixelDiffThreshold = 100;
 
-        this.motionBox = {};
-        this.motionBox.x = {};
-        this.motionBox.y = {};
-        this.motionBox.x.min = frameWidth;
-        this.motionBox.y.min = frameWidth;
-        this.motionBox.x.max = 0;
-        this.motionBox.y.max = 0;
+        this.motionBox = {
+            x: {
+                min: frameWidth,
+                max: frameWidth
+            },
+            y: {
+                min: 0,
+                max: 0
+            }};
 
-        this.score = settings.scoreRef;
+        this.score = settings.scoreRef || document.createElement("span");
 
         this.motionCanvas = settings.motionCanvasRef || document.createElement("canvas");
         this.captureCanvas = settings.captureCanvasRef || document.createElement("canvas");
