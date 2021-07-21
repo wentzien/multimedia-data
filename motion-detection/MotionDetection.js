@@ -1,18 +1,25 @@
 const MotionDetection = class {
     constructor(settings) {
-        console.log(settings)
-
         this.stream = null;
         this.video = settings.videoRef;
         this.oldCapturedImage = false;
 
         this.settings = {};
-        this.settings.captureIntervalTime = 100;
+        this.settings.captureIntervalTime = 64;
         this.settings.frameWidth = 400;
         this.settings.frameHeight = 300;
-        this.settings.pixelDiffThreshold = 100;
 
         const {frameWidth, frameHeight} = this.settings;
+
+        this.settings.pixelDiffThreshold = 100;
+
+        this.motionBox = {};
+        this.motionBox.x = {};
+        this.motionBox.y = {};
+        this.motionBox.x.min = frameWidth;
+        this.motionBox.y.min = frameWidth;
+        this.motionBox.x.max = 0;
+        this.motionBox.y.max = 0;
 
         this.score = settings.scoreRef;
 
@@ -80,7 +87,6 @@ const MotionDetection = class {
 
         if (oldCapturedImage) {
             const diff = this.#getDifference(diffImageData);
-            console.log(diff);
             score.innerHTML = diff.score;
 
             motionContext.putImageData(diffImageData, 0, 0);
@@ -94,7 +100,7 @@ const MotionDetection = class {
     }
 
     #getDifference(diffImageData) {
-        const {pixelDiffThreshold} = this.settings;
+        const {pixelDiffThreshold, frameWidth, frameHeight} = this.settings;
         let rgba = diffImageData.data;
 
         let score = 0;
@@ -108,10 +114,50 @@ const MotionDetection = class {
 
             if (pixelDiff >= pixelDiffThreshold) {
                 score++;
+                this.#calcMotionBoxPixels(i / 4);
             }
         }
 
+        this.#drawMotionBoxCaptureCanvas();
+        this.#drawMotionBoxMotionCanvas();
+
+        this.motionBox.x.min = frameWidth;
+        this.motionBox.y.min = frameWidth;
+        this.motionBox.x.max = 0;
+        this.motionBox.y.max = 0;
+
         return {score};
+    }
+
+    #calcMotionBoxPixels(index) {
+        const {frameWidth} = this.settings;
+        const x = index % frameWidth;
+        const y = Math.floor(index / frameWidth);
+
+        this.motionBox.x.min = Math.min(this.motionBox.x.min, x);
+        this.motionBox.y.min = Math.min(this.motionBox.y.min, y);
+        this.motionBox.x.max = Math.max(this.motionBox.x.max, x);
+        this.motionBox.y.max = Math.max(this.motionBox.y.max, y);
+
+        // check if x or y is outer the actual box ?
+    }
+
+    #drawMotionBoxCaptureCanvas() {
+        const {captureContext} = this;
+        const {min: xMin, max: xMax} = this.motionBox.x;
+        const {min: yMin, max: yMax} = this.motionBox.y;
+        captureContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
+        captureContext.strokeStyle = "#c70c0c";
+        // console.log("xMin: ", xMin, "yMin: s", yMin, "xMax: ", xMax, "yMax: ", yMax);
+    }
+
+    #drawMotionBoxMotionCanvas() {
+        const {motionContext} = this;
+        const {min: xMin, max: xMax} = this.motionBox.x;
+        const {min: yMin, max: yMax} = this.motionBox.y;
+        motionContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
+        motionContext.strokeStyle = "#fff";
+        // console.log("xMin: ", xMin, "yMin: s", yMin, "xMax: ", xMax, "yMax: ", yMax);
     }
 
     async #getMedia(mediaSettings) {
