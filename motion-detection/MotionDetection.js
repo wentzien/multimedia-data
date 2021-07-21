@@ -23,9 +23,9 @@ const MotionDetection = class {
 
         this.score = settings.scoreRef;
 
-        this.motionCanvas = settings.motionCanvasRef //|| document.createElement("canvas");
-        this.captureCanvas = settings.captureCanvasRef //|| document.createElement("canvas");
-        this.diffCanvas = settings.diffCanvasRef //|| document.createElement("canvas");
+        this.motionCanvas = settings.motionCanvasRef || document.createElement("canvas");
+        this.captureCanvas = settings.captureCanvasRef || document.createElement("canvas");
+        this.diffCanvas = document.createElement("canvas");
         const {motionCanvas, captureCanvas, diffCanvas} = this;
 
         motionCanvas.width = frameWidth;
@@ -119,7 +119,7 @@ const MotionDetection = class {
         }
 
         this.#drawMotionBoxCaptureCanvas();
-        this.#drawMotionBoxMotionCanvas();
+        // this.#drawMotionBoxMotionCanvas();
 
         this.motionBox.x.min = frameWidth;
         this.motionBox.y.min = frameWidth;
@@ -152,11 +152,12 @@ const MotionDetection = class {
     }
 
     #drawMotionBoxMotionCanvas() {
-        const {motionContext} = this;
+        const {diffContext} = this;
         const {min: xMin, max: xMax} = this.motionBox.x;
         const {min: yMin, max: yMax} = this.motionBox.y;
-        motionContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
-        motionContext.strokeStyle = "#fff";
+        diffContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
+        diffContext.strokeStyle = "#fff";
+
         // console.log("xMin: ", xMin, "yMin: s", yMin, "xMax: ", xMax, "yMax: ", yMax);
     }
 
