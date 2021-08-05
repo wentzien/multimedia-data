@@ -12,7 +12,7 @@ const MotionDetector = class {
             frameWidth: settings.frameWidth || 400,
             frameHeight: settings.frameHeight || 300,
             sensitivity: settings.sensitivity || 25,
-            color: settings.color || '#4d0f0d'
+            color: settings.color || '#9f670f'
         };
 
         const {frameWidth, frameHeight} = this.settings;
@@ -122,6 +122,7 @@ const MotionDetector = class {
         }        
         function isRectangle(m)    {
             // finding row and column size
+            let result = [];
             let rows = m.length;
             if (rows == 0)
                 return false;
@@ -135,15 +136,29 @@ const MotionDetector = class {
                 if (m[y1][x1] == 1)
                 for (let y2 = y1 + 1; y2 < rows; y2++)
                     for (let x2 = x1 + 1; x2 < columns; x2++)
-                    if (m[y1][x2] == 1 && m[y2][x1] == 1 && m[y2][x2] == 1 && (x2-x1)>1)
-                        return [[x1,y1],[x2,y2]];
-            return false;
+                    if (m[y1][x2] == 1 && m[y2][x1] == 1 && m[y2][x2] == 1 && (x2-x1)>1){
+                        if(!checkIfExist(x1,x2,y1,y2)){
+                            result.push([[y1,x1],[y2,x2]]);
+                        }                        
+                    }                        
+            return result;
+
+            function checkIfExist(xMin,xMax,yMin,yMax){
+                for (let i = 0; i < result.length; i += 1) {                 
+                    if(result[i][0][0] == xMin || result[i][0][1] == xMax || 
+                        result[i][1][0] == yMin ||result[i][1][1] == yMax){
+                        return true                        
+                    }
+                }
+                return false
+            }
         }
 
-        let corners = isRectangle(imageArray);
-        if (corners != false) {
-            this.#drawMotionBoxCaptureCanvas(corners);
-            // this.#drawMotionBoxMotionCanvas();
+        let result = isRectangle(imageArray);
+        if (result != false) {
+            for (let i = 0; i < result.length; i += 1) {                 
+                this.#drawMotionBoxCaptureCanvas(result[i]);
+            }
         }
     }
 
@@ -154,9 +169,15 @@ const MotionDetector = class {
         const yMin = corners[0][1];
         const xMax = corners[1][0];
         const yMax = corners[1][1];
-        captureContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
-        captureContext.strokeStyle = motionBoxColor;
-
+        let centerX = xMin + (Math.floor((xMax - xMin)/2));
+        let centerY = yMin + (Math.floor((yMax - yMin)/2));
+        captureContext.fillStyle = motionBoxColor;
+        captureContext.beginPath();
+        captureContext.arc(centerX,centerY, 3, 0, 2 * Math.PI);
+        captureContext.lineWidth = 1;        
+        captureContext.strokeStyle = motionBoxColor;      
+        captureContext.fill();  
+        captureContext.stroke();
         // console.log("xMin: ", xMin, "yMin: s", yMin, "xMax: ", xMax, "yMax: ", yMax);
     }
 
