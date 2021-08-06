@@ -1,14 +1,31 @@
 <body>
     <!-- for the output -->
     <canvas id="capture-canvas"></canvas>
+    <!-- setting the min plane with slider -->
+    <div style="margin-top: 1rem;margin-bottom: 1rem;">
+        <span>Min Flächeninhalt:</span>
+        <input id="sliderSurfaceArea" type="range" min="0" max="1000" value="200"/>
+        <span id="sliderValueSurfaceArea">200</span><span>px²</span>
+    </div>
+
+    <!-- setting the min distance with slider -->
+    <div  style="margin-bottom: 1rem;">
+        <span>Min Entfernung:</span>
+        <input id="sliderDistance" type="range" min="0" max="100" value="10"/>
+        <span id="sliderValueDistance">10</span><span>px</span>
+    </div>
+    
     <!-- setting the sensitivity with slider -->
-    <input id="slider" type="range" min="0" max="100" value="25"/>
-    <span id="sliderValue">25</span>
+    <div  style="margin-bottom: 1rem;">
+        <span>Sensitivität:</span>
+        <input id="slider" type="range" min="0" max="100" value="25"/>
+        <span id="sliderValue">25</span>
+    </div>    
 
     <form>
         <label for="kb_selected_color">Bitte Farbe wählen: </label>
         <input type="color"id="kb_selected_color">
-        <span id="hex">(#9f670f)</span>
+        <span id="hex">(#699d3c)</span>
     </form>
     
     <script src="index.js"></script>
@@ -21,21 +38,30 @@
         motionDetector.start();
         
         const slider = document.getElementById("slider");
-        slider.addEventListener("change", () => motionDetector.settings.sensitivity = slider.value);
+        slider.addEventListener("change", () => motionDetector.settings.sensitivity = parseInt(slider.value));
         slider.addEventListener("change", () => document.getElementById("sliderValue").innerHTML = slider.value);
+
+        // Min Flächeninhalt aus Slider auslesen
+        const sliderSurfaceArea = document.getElementById("sliderSurfaceArea");
+        sliderSurfaceArea.addEventListener("change", () => motionDetector.settings.minSurfaceArea = parseInt(sliderSurfaceArea.value));
+        sliderSurfaceArea.addEventListener("change", () => document.getElementById("sliderValueSurfaceArea").innerHTML = sliderSurfaceArea.value);
+
+        // Min Flächeninhalt aus Slider auslesen
+        const sliderDistance = document.getElementById("sliderDistance");
+        sliderDistance.addEventListener("change", () => motionDetector.settings.minDistance = parseInt(sliderDistance.value));
+        sliderDistance.addEventListener("change", () => document.getElementById("sliderValueDistance").innerHTML = sliderDistance.value);
 
         // Farbe aus ColorPicker auslesen
         const theInput = document.getElementById("kb_selected_color");
         theInput.addEventListener("change", () => motionDetector.settings.color = theInput.value);
 
-        const theColor = theInput.value;
         theInput.addEventListener("input", function() {
             // Farcode (Hex) schreiben
             document.getElementById("hex").innerHTML = theInput.value;
 
             // Farbvariable schreiben
             document.documentElement.style.setProperty('--kb-color',theInput.value);
-            () => motionDetector.settings.color = theColor;
+            () => motionDetector.settings.color = theInput.value;
         }, false);   
     </script>
     </body>

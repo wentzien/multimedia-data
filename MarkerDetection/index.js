@@ -2,31 +2,20 @@ const MotionDetector = class {
     constructor(settings) {
         this.stream = null;
         this.video = settings.videoRef || document.createElement("video");
-        this.downloadTimer = 5;
-        this.downloadCounter = 0;
 
         this.settings = {
             captureIntervalTime: settings.captureIntervalTime || 100,
-            showMotionBox: settings.showMotionBox || true,
             motionBoxColor: settings.motionBoxColor || "#ff0000",
             frameWidth: settings.frameWidth || 400,
             frameHeight: settings.frameHeight || 300,
-            sensitivity: settings.sensitivity || 25,
-            color: settings.color || '#9f670f'
+            sensitivity: settings.sensitivity || 15,
+            color: settings.color || '#699d3c',
+            minSurfaceArea: settings.minSurfaceArea || 200,
+            minDistance: settings.minDistance || 10,
         };
 
         const {frameWidth, frameHeight} = this.settings;
 
-        this.motionBox = {
-            x: {
-                min: frameWidth,
-                max: frameWidth
-            },
-            y: {
-                min: 0,
-                max: 0
-            }
-        };
         this.imageArray = [];         
 
         this.captureCanvas = settings.captureCanvasRef || document.createElement("canvas");
@@ -44,8 +33,8 @@ const MotionDetector = class {
         await this.#getMedia({
             audio: false,
             video: {
-                width: frameWidth,
-                height: frameHeight
+                width: { ideal: 4096 },
+                height: { ideal: 2160 } 
             }
         });
 
@@ -56,6 +45,14 @@ const MotionDetector = class {
 
         video.srcObject = this.stream;
     }
+
+    async #getMedia(mediaSettings) {
+        try {
+            this.stream = await navigator.mediaDevices.getUserMedia(mediaSettings);
+        } catch (err) {
+            console.log(err);
+        }
+    } 
 
     #startCapture() {
         const {captureIntervalTime} = this.settings;
@@ -73,8 +70,6 @@ const MotionDetector = class {
         const captureImageData = captureContext.getImageData(0, 0, frameWidth, frameHeight);
 
         this.#detectMarker(captureImageData);
-
-        motionContext.putImageData(captureImageData, 0, 0);
     }
 
     #hexToRgb(hex) {
@@ -87,7 +82,7 @@ const MotionDetector = class {
     }
 
     #detectMarker(imageData) {
-        const {sensitivity, frameWidth, showMotionBox,color} = this.settings;
+        const {sensitivity, frameWidth, color, minSurfaceArea, minDistance} = this.settings;
         const {imageArray} = this;  
         let targetRGB = this.#hexToRgb(color);
         let targetRed = targetRGB.r;
@@ -98,21 +93,32 @@ const MotionDetector = class {
                     
         for (let i = 0; i < rgba.length; i += 4) {                 
             let x = (i/4)%frameWidth;
-            let y = Math.floor((i/4)/frameWidth);
-            
+            let y = Math.floor((i/4)/frameWidth);            
 
             let red = rgba[i];
             let green = rgba[i+1];
-            let blue = rgba[i+2];
-            let alpha = rgba[i+3];    
+            let blue = rgba[i+2];   
 
             let reddiff = (Math.abs(targetRed - red))/targetRed;
             let greendiff =  (Math.abs(targetGreen - green))/targetGreen;
             let bluediff =  (Math.abs(targetBlue - blue))/targetBlue;
-            let rgbDiffSum = reddiff + bluediff +greendiff;
             if(!imageArray[x]){
                 imageArray[x] = [];
             }            
+
+            let c1 = [0, 0, 0],
+            c2 = [30, 30, 30],
+            c3 = [90, 0, 0],
+            distance = function(v1, v2){
+                let i,
+                    d = 0;
+
+                for (i = 0; i < v1.length; i++) {
+                    d += (v1[i] - v2[i])*(v1[i] - v2[i]);
+                }
+                return Math.sqrt(d);
+            };
+            console.log( distance(c1, c2), distance(c1, c3), distance(c2, c3) );
             
             if(reddiff <= (sensitivity/100) && greendiff <= (sensitivity/100) && bluediff <= (sensitivity/100)){                
                 imageArray[x][y] = 1;
@@ -120,7 +126,7 @@ const MotionDetector = class {
                 imageArray[x][y] = 0;
             }         
         }        
-        function isRectangle(m)    {
+        function findRectangles(m)    {
             // finding row and column size
             let result = [];
             let rows = m.length;
@@ -136,33 +142,38 @@ const MotionDetector = class {
                 if (m[y1][x1] == 1)
                 for (let y2 = y1 + 1; y2 < rows; y2++)
                     for (let x2 = x1 + 1; x2 < columns; x2++)
-                    if (m[y1][x2] == 1 && m[y2][x1] == 1 && m[y2][x2] == 1 && (x2-x1)>1){
-                        if(!checkIfExist(x1,x2,y1,y2)){
+                    if (m[y1][x2] == 1 && m[y2][x1] == 1 && m[y2][x2] == 1 && (x2-x1)*(y2-y1)>minSurfaceArea){
+                        if(!checkRenderNecessity(x1,x2,y1,y2)){
                             result.push([[y1,x1],[y2,x2]]);
                         }                        
                     }                        
             return result;
 
-            function checkIfExist(xMin,xMax,yMin,yMax){
+            function checkRenderNecessity(xMin,xMax,yMin,yMax){
                 for (let i = 0; i < result.length; i += 1) {                 
-                    if(result[i][0][0] == xMin || result[i][0][1] == xMax || 
-                        result[i][1][0] == yMin ||result[i][1][1] == yMax){
-                        return true                        
+                    if(result[i][0][0] == xMin || Math.abs(result[i][0][0]-xMin) < minDistance){
+                        return true;                        
+                    }else if(result[i][0][1] == xMax || Math.abs(result[i][0][1]-xMax) < minDistance){
+                        return true; 
+                    }else if(result[i][1][0] == yMin || yMin && Math.abs(result[i][1][0]-yMin) < minDistance){
+                        return true; 
+                    }else if(result[i][1][1] == yMax || yMax && Math.abs(result[i][1][1]-yMax) < minDistance){
+                        return true; 
                     }
                 }
                 return false
             }
         }
 
-        let result = isRectangle(imageArray);
+        let result = findRectangles(imageArray);
         if (result != false) {
             for (let i = 0; i < result.length; i += 1) {                 
-                this.#drawMotionBoxCaptureCanvas(result[i]);
+                this.#drawMarkerCaptureCanvas(result[i]);
             }
         }
     }
 
-    #drawMotionBoxCaptureCanvas(corners) {
+    #drawMarkerCaptureCanvas(corners) {
         const {captureContext} = this;
         const {motionBoxColor} = this.settings;
         const xMin = corners[0][0];
@@ -178,54 +189,5 @@ const MotionDetector = class {
         captureContext.strokeStyle = motionBoxColor;      
         captureContext.fill();  
         captureContext.stroke();
-        // console.log("xMin: ", xMin, "yMin: s", yMin, "xMax: ", xMax, "yMax: ", yMax);
-    }
-
-    async #getMedia(mediaSettings) {
-        try {
-            this.stream = await navigator.mediaDevices.getUserMedia(mediaSettings);
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-    #downloadCaptureCanvas() {
-        const {captureCanvas} = this;
-        const link = document.createElement("a");
-        link.href = captureCanvas.toDataURL();
-        link.download = "captureCanvas.png";
-        link.click();
-    }
-
-    #downloadMotionCanvas() {
-        const {motionCanvas} = this;
-        const link = document.createElement("a");
-        link.href = motionCanvas.toDataURL();
-        link.download = "motionCanvas.png";
-        link.click();
-    }
-
-    #calcMotionBoxPixels(index) {
-        const {frameWidth} = this.settings;
-        const x = index % frameWidth;
-        const y = Math.floor(index / frameWidth);
-
-        this.motionBox.x.min = Math.min(this.motionBox.x.min, x);
-        this.motionBox.y.min = Math.min(this.motionBox.y.min, y);
-        this.motionBox.x.max = Math.max(this.motionBox.x.max, x);
-        this.motionBox.y.max = Math.max(this.motionBox.y.max, y);
-    }
-
-    
-
-    #drawMotionBoxMotionCanvas() {
-        const {diffContext} = this;
-        const {min: xMin, max: xMax} = this.motionBox.x;
-        const {min: yMin, max: yMax} = this.motionBox.y;
-        diffContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
-        diffContext.strokeStyle = "#fff";
-
-        // console.log("xMin: ", xMin, "yMin: s", yMin, "xMax: ", xMax, "yMax: ", yMax);
-    }
-    
+    }      
 }
