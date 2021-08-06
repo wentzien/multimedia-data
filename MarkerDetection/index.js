@@ -9,7 +9,7 @@ const MotionDetector = class {
             frameWidth: settings.frameWidth || 400,
             frameHeight: settings.frameHeight || 300,
             sensitivity: settings.sensitivity || 15,
-            color: settings.color || '#699d3c',
+            color: settings.color || '#9dad4b',
             minSurfaceArea: settings.minSurfaceArea || 200,
             minDistance: settings.minDistance || 10,
         };
@@ -83,13 +83,13 @@ const MotionDetector = class {
 
     #detectMarker(imageData) {
         const {sensitivity, frameWidth, color, minSurfaceArea, minDistance} = this.settings;
-        const {imageArray} = this;  
+        const {imageArray} = this; 
+        let rgba = imageData.data;
+
         let targetRGB = this.#hexToRgb(color);
         let targetRed = targetRGB.r;
         let targetGreen = targetRGB.g;   
-        let targetBlue = targetRGB.b;  
-
-        let rgba = imageData.data;
+        let targetBlue = targetRGB.b;          
                     
         for (let i = 0; i < rgba.length; i += 4) {                 
             let x = (i/4)%frameWidth;
@@ -97,33 +97,21 @@ const MotionDetector = class {
 
             let red = rgba[i];
             let green = rgba[i+1];
-            let blue = rgba[i+2];   
+            let blue = rgba[i+2];
 
             let reddiff = (Math.abs(targetRed - red))/targetRed;
             let greendiff =  (Math.abs(targetGreen - green))/targetGreen;
             let bluediff =  (Math.abs(targetBlue - blue))/targetBlue;
             if(!imageArray[x]){
                 imageArray[x] = [];
-            }            
+            } 
 
-            let c1 = [0, 0, 0],
-            c2 = [30, 30, 30],
-            c3 = [90, 0, 0],
-            distance = function(v1, v2){
-                let i,
-                    d = 0;
+            const distance = Math.sqrt((red - targetRed) ** 2 + (green - targetGreen) ** 2 + (blue - targetBlue) ** 2);
 
-                for (i = 0; i < v1.length; i++) {
-                    d += (v1[i] - v2[i])*(v1[i] - v2[i]);
-                }
-                return Math.sqrt(d);
-            };
-            console.log( distance(c1, c2), distance(c1, c3), distance(c2, c3) );
-            
-            if(reddiff <= (sensitivity/100) && greendiff <= (sensitivity/100) && bluediff <= (sensitivity/100)){                
-                imageArray[x][y] = 1;
-            }else{
+            if(distance < sensitivity){                
                 imageArray[x][y] = 0;
+            }else{
+                imageArray[x][y] = 1;
             }         
         }        
         function findRectangles(m)    {
@@ -165,10 +153,114 @@ const MotionDetector = class {
             }
         }
 
-        let result = findRectangles(imageArray);
-        if (result != false) {
+        function findend(i,j,a,output,index){
+            let x = a.length;
+            let y = a[0].length;
+        
+            //flag to check column edge case,
+            //initializing with 0
+            let flagc = 0
+        
+            //flag to check row edge case,
+            //initializing with 0
+            let flagr = 0
+            let o,p;
+        
+            for (let m = i; m < x; m+= 1) {
+                p = m;          
+        
+                //loop breaks where first 1 encounters
+                if(a[m][j] == 1){
+                    flagr = 1 //set the flag
+                    break
+                }
+                //pass because already processed
+                if(a[m][j] == 5){                    
+                }
+                for (let n = j; n < y; n+= 1) { 
+                    o = n;
+                    //loop breaks where first 1 encounters
+                    if(a[m][n] == 1){
+                        flagc = 1 //set the flag
+                        break
+                    }
+                    //fill rectangle elements with any
+                    //number so that we can exclude
+                    //next time
+                    a[m][n] = 5
+                }
+            }
+            if(flagr == 1)
+                output[index].push(p-1)            
+            else
+                //when end point touch the boundary
+                output[index].push(p)
+        
+            if(flagc == 1)
+                output[index].push(o-1)
+            else
+                //when end point touch the boundary
+                output[index].push(o)
+        }
+ 
+ 
+        function get_rectangle_coordinates(a){
+        
+            //retrieving the column size of array
+            let size_of_array = a.length;
+        
+            //output array where we are going
+            //to store our output
+            let output = []
+        
+            //It will be used for storing start
+            //and end location in the same index
+            let index = -1
+        
+            for (let i = 0; i < size_of_array; i+= 1) { 
+                for (let j = 0; j < a[0].length ; j+= 1) { 
+                    if(a[i][j] == 0){
+                        if(!checkRenderNecessity(output,i,j)){
+                            //storing initial position
+                            //of rectangle
+                            output.push([i, j])
+            
+                            //will be used for the
+                            //last position
+                            index = index + 1       
+                            findend(i, j, a, output, index)
+                        }
+                    }
+                }
+            }
+            function checkRenderNecessity(output,x,y){
+                if(output.length == 0)
+                    return false  
+                for (let i = 0; i < output.length; i += 1) {   
+                    const xMin = output[0];
+                    const yMin = output[1];
+                    const xMax = output[2];
+                    const yMax = output[3];              
+                    if(x == xMin || Math.abs(x-xMin) < minDistance){
+                        return true;                        
+                    }else if(x == xMax || Math.abs(x-xMax) < minDistance){
+                        return true; 
+                    }else if(y == yMin || yMin && Math.abs(y-yMin) < minDistance){
+                        return true; 
+                    }else if(y == yMax || yMax && Math.abs(y-yMax) < minDistance){
+                        return true; 
+                    }
+                }
+                return false
+            }
+            return output;
+        }
+ 
+        let result = get_rectangle_coordinates(imageArray);
+
+        if (result.length > 0) {
             for (let i = 0; i < result.length; i += 1) {                 
-                this.#drawMarkerCaptureCanvas(result[i]);
+                this.#drawMotionBoxMotionCanvas(result[i]);
             }
         }
     }
@@ -176,10 +268,10 @@ const MotionDetector = class {
     #drawMarkerCaptureCanvas(corners) {
         const {captureContext} = this;
         const {motionBoxColor} = this.settings;
-        const xMin = corners[0][0];
-        const yMin = corners[0][1];
-        const xMax = corners[1][0];
-        const yMax = corners[1][1];
+        const xMin = corners[0];
+        const yMin = corners[1];
+        const xMax = corners[2];
+        const yMax = corners[3];
         let centerX = xMin + (Math.floor((xMax - xMin)/2));
         let centerY = yMin + (Math.floor((yMax - yMin)/2));
         captureContext.fillStyle = motionBoxColor;
@@ -189,5 +281,19 @@ const MotionDetector = class {
         captureContext.strokeStyle = motionBoxColor;      
         captureContext.fill();  
         captureContext.stroke();
-    }      
+    }   
+    
+    #drawMotionBoxMotionCanvas(corners) {
+        // drawing the motionbox in the corresponding context
+        const {captureContext} = this;
+        const {motionBoxColor} = this.settings;
+        const xMin = corners[0];
+        const yMin = corners[1];
+        const xMax = corners[2];
+        const yMax = corners[3];
+        captureContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
+        captureContext.strokeStyle = motionBoxColor;
+
+        // console.log("xMin: ", xMin, "yMin: s", yMin, "xMax: ", xMax, "yMax: ", yMax);
+    }
 }
