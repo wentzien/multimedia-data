@@ -32,8 +32,8 @@ const MarkerTracking = class {
         await this.#getMedia({
             audio: false,
             video: {
-                width: { ideal: 4096 },
-                height: { ideal: 2160 } 
+                width: frameWidth,
+                height: frameHeight
             }
         });
 
