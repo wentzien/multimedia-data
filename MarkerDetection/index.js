@@ -61,7 +61,7 @@ const MotionDetector = class {
     }
 
     #capture() {
-        const {video, score} = this;
+        const {video} = this;
         const {frameWidth, frameHeight} = this.settings;
         const {captureContext} = this;
 
@@ -81,7 +81,7 @@ const MotionDetector = class {
     }
 
     #detectMarker(imageData) {
-        const {sensitivity, frameWidth, color, minSurfaceArea} = this.settings;
+        const {sensitivity, frameWidth, color} = this.settings;
         const {imageArray} = this; 
         let rgba = imageData.data;
 
@@ -98,9 +98,6 @@ const MotionDetector = class {
             let green = rgba[i+1];
             let blue = rgba[i+2];
 
-            let reddiff = (Math.abs(targetRed - red))/targetRed;
-            let greendiff =  (Math.abs(targetGreen - green))/targetGreen;
-            let bluediff =  (Math.abs(targetBlue - blue))/targetBlue;
             if(!imageArray[x]){
                 imageArray[x] = [];
             } 
@@ -119,6 +116,7 @@ const MotionDetector = class {
         if (result.length > 0) {
             for (let i = 0; i < result.length; i += 1) {                 
                 this.#drawMarkerCaptureCanvas(result[i]);
+                let ets = 'dsaf';
             }
         }
     }
@@ -190,16 +188,17 @@ const MotionDetector = class {
                 if(a[i][j] == 0){                        
                     //storing initial position
                     //of rectangle
-                    output.push([i, j])
+                    output.push([i, j]);
         
                     //will be used for the
                     //last position
                     index = index + 1;     
-                    findend(i, j, a, output, index)
+                    findend(i, j, a, output, index);
+                    //if rectangle doesnt fit the requirements --> delete from output array                     
                     if(!this.#checkRenderNecessity(output[index],output)){
                         output.splice(index, 1);
-                        index = index + -1;
-                    }
+                        index = output.length -1;                        
+                    }                                       
                 }
             }
         }        
@@ -215,9 +214,11 @@ const MotionDetector = class {
         if((x2-x1)*(y2-y1)<minSurfaceArea){
             return false
         }  
-        if(output.length == 1)
-            return true              
-        for (let i = 0; i < output.length - 1; i += 1) {   
+        if(output.length == 1){
+            return true 
+        }   
+        let render = true;                   
+        for (let i = 0; i < output.length - 2; i += 1) {   
             const xMin = output[i][0];
             const yMin = output[i][1];
             const xMax = output[i][2];
@@ -272,21 +273,21 @@ const MotionDetector = class {
             let contain = contains({x1,y1,x2,y2},{xMin,yMin,xMax,yMax});     
             let inter = rectanglesIntersect(x1,y1,x2,y2,xMin,yMin,xMax,yMax);
             if(touche || overlap || contain || inter){                        
-                if((x2-x1)*(y2-y1) > (xMax-xMin)*(yMax-yMin)){                    
-                    if(!(output[i][0] == x1 && output[i][1] == y1 && output[i][2] == x2 && output[i][3] == y2)){
+                if((x2-x1)*(y2-y1) > (xMax-xMin)*(yMax-yMin)){ 
+                    if(render){
                         output[i][0] = x1;
                         output[i][1] = y1;
                         output[i][2] = x2;
-                        output[i][3] = y2;  
-                    }    
+                        output[i][3] = y2;
+                    }else{
+                        output.splice(i, 1);
+                    }                    
                 } 
-                return false                      
-            }else{
-                // this.#drawMotionBoxMotionCanvas(input);
-                //     this.#drawMotionBoxMotionCanvas(output[i]);
-                //     const {captureContext} = this;
-                //     captureContext.clearRect(0, 0, canvas.width, canvas.height);
+                render = false;                                   
             }
+        }      
+        if(!render){                        
+            return false
         }
         return true
     }
