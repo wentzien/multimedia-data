@@ -115,8 +115,13 @@ const MotionDetector = class {
 
         if (result.length > 0) {
             for (let i = 0; i < result.length; i += 1) {                 
+<<<<<<< Updated upstream
                 this.#drawMarkerCaptureCanvas(result[i]);
                 let ets = 'dsaf';
+=======
+                // this.#drawMarkerCaptureCanvas(result[i]);
+                this.#drawMotionBoxMotionCanvas(result[i]);
+>>>>>>> Stashed changes
             }
         }
     }
