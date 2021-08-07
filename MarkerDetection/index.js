@@ -100,9 +100,9 @@ const MotionDetector = class {
                 imageArray[x] = [];
             } 
 
-            const distance = Math.sqrt((red - targetRed) ** 2 + (green - targetGreen) ** 2 + (blue - targetBlue) ** 2);
+            const eukDistance = Math.sqrt((red - targetRed) ** 2 + (green - targetGreen) ** 2 + (blue - targetBlue) ** 2);
 
-            if(distance < sensitivity){                
+            if(eukDistance < sensitivity){                
                 imageArray[x][y] = 0;
             }else{
                 imageArray[x][y] = 1;
