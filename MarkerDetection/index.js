@@ -8,15 +8,14 @@ const MotionDetector = class {
             motionBoxColor: settings.motionBoxColor || "#ff0000",
             frameWidth: settings.frameWidth || 400,
             frameHeight: settings.frameHeight || 300,
-            sensitivity: settings.sensitivity || 15,
+            sensitivity: settings.sensitivity || 35,
             color: settings.color || '#9dad4b',
-            minSurfaceArea: settings.minSurfaceArea || 200,
-            minDistance: settings.minDistance || 10,
+            minSurfaceArea: settings.minSurfaceArea || 20
         };
 
         const {frameWidth, frameHeight} = this.settings;
 
-        this.imageArray = [];         
+        this.imageArray = [];     
 
         this.captureCanvas = settings.captureCanvasRef || document.createElement("canvas");
         const {captureCanvas} = this;
@@ -82,7 +81,7 @@ const MotionDetector = class {
     }
 
     #detectMarker(imageData) {
-        const {sensitivity, frameWidth, color, minSurfaceArea, minDistance} = this.settings;
+        const {sensitivity, frameWidth, color, minSurfaceArea} = this.settings;
         const {imageArray} = this; 
         let rgba = imageData.data;
 
@@ -113,46 +112,18 @@ const MotionDetector = class {
             }else{
                 imageArray[x][y] = 1;
             }         
-        }        
-        function findRectangles(m)    {
-            // finding row and column size
-            let result = [];
-            let rows = m.length;
-            if (rows == 0)
-                return false;
-            let columns = m[0].length;
-    
-            // scanning the matrix
-            for (let y1 = 0; y1 < rows; y1++)
-            for (let x1 = 0; x1 < columns; x1++)
-                // if any index found 1 then try
-                // for all rectangles
-                if (m[y1][x1] == 1)
-                for (let y2 = y1 + 1; y2 < rows; y2++)
-                    for (let x2 = x1 + 1; x2 < columns; x2++)
-                    if (m[y1][x2] == 1 && m[y2][x1] == 1 && m[y2][x2] == 1 && (x2-x1)*(y2-y1)>minSurfaceArea){
-                        if(!checkRenderNecessity(x1,x2,y1,y2)){
-                            result.push([[y1,x1],[y2,x2]]);
-                        }                        
-                    }                        
-            return result;
+        }
+ 
+        let result = this.#get_rectangle_coordinates(imageArray);
 
-            function checkRenderNecessity(xMin,xMax,yMin,yMax){
-                for (let i = 0; i < result.length; i += 1) {                 
-                    if(result[i][0][0] == xMin || Math.abs(result[i][0][0]-xMin) < minDistance){
-                        return true;                        
-                    }else if(result[i][0][1] == xMax || Math.abs(result[i][0][1]-xMax) < minDistance){
-                        return true; 
-                    }else if(result[i][1][0] == yMin || yMin && Math.abs(result[i][1][0]-yMin) < minDistance){
-                        return true; 
-                    }else if(result[i][1][1] == yMax || yMax && Math.abs(result[i][1][1]-yMax) < minDistance){
-                        return true; 
-                    }
-                }
-                return false
+        if (result.length > 0) {
+            for (let i = 0; i < result.length; i += 1) {                 
+                this.#drawMarkerCaptureCanvas(result[i]);
             }
         }
+    }
 
+    #get_rectangle_coordinates(a){
         function findend(i,j,a,output,index){
             let x = a.length;
             let y = a[0].length;
@@ -202,67 +173,122 @@ const MotionDetector = class {
                 //when end point touch the boundary
                 output[index].push(o)
         }
- 
- 
-        function get_rectangle_coordinates(a){
+    
+        //retrieving the column size of array
+        let size_of_array = a.length;
+    
+        //output array where we are going
+        //to store our output
+        let output = []
+    
+        //It will be used for storing start
+        //and end location in the same index
+        let index = -1
+    
+        for (let i = 0; i < size_of_array; i+= 1) { 
+            for (let j = 0; j < a[0].length ; j+= 1) { 
+                if(a[i][j] == 0){                        
+                    //storing initial position
+                    //of rectangle
+                    output.push([i, j])
         
-            //retrieving the column size of array
-            let size_of_array = a.length;
-        
-            //output array where we are going
-            //to store our output
-            let output = []
-        
-            //It will be used for storing start
-            //and end location in the same index
-            let index = -1
-        
-            for (let i = 0; i < size_of_array; i+= 1) { 
-                for (let j = 0; j < a[0].length ; j+= 1) { 
-                    if(a[i][j] == 0){
-                        if(!checkRenderNecessity(output,i,j)){
-                            //storing initial position
-                            //of rectangle
-                            output.push([i, j])
-            
-                            //will be used for the
-                            //last position
-                            index = index + 1       
-                            findend(i, j, a, output, index)
-                        }
+                    //will be used for the
+                    //last position
+                    index = index + 1;     
+                    findend(i, j, a, output, index)
+                    if(!this.#checkRenderNecessity(output[index],output)){
+                        output.splice(index, 1);
+                        index = index + -1;
                     }
                 }
             }
-            function checkRenderNecessity(output,x,y){
-                if(output.length == 0)
-                    return false  
-                for (let i = 0; i < output.length; i += 1) {   
-                    const xMin = output[0];
-                    const yMin = output[1];
-                    const xMax = output[2];
-                    const yMax = output[3];              
-                    if(x == xMin || Math.abs(x-xMin) < minDistance){
-                        return true;                        
-                    }else if(x == xMax || Math.abs(x-xMax) < minDistance){
-                        return true; 
-                    }else if(y == yMin || yMin && Math.abs(y-yMin) < minDistance){
-                        return true; 
-                    }else if(y == yMax || yMax && Math.abs(y-yMax) < minDistance){
-                        return true; 
-                    }
-                }
-                return false
-            }
-            return output;
-        }
- 
-        let result = get_rectangle_coordinates(imageArray);
+        }        
+        return output;
+    }
 
-        if (result.length > 0) {
-            for (let i = 0; i < result.length; i += 1) {                 
-                this.#drawMotionBoxMotionCanvas(result[i]);
+    #checkRenderNecessity(input,output){    
+        const {minSurfaceArea} = this.settings;
+        let x1 = input[0];
+        let x2 = input[2];
+        let y1 = input[1];
+        let y2 = input[3];
+        if((x2-x1)*(y2-y1)<minSurfaceArea){
+            return false
+        }  
+        if(output.length == 1)
+            return true              
+        for (let i = 0; i < output.length - 1; i += 1) {   
+            const xMin = output[i][0];
+            const yMin = output[i][1];
+            const xMax = output[i][2];
+            const yMax = output[i][3];     
+            // Check if rectangle a contains rectangle b
+            // Each object (a and b) should have 2 properties to represent the
+            // top-left corner (x1, y1) and 2 for the bottom-right corner (x2, y2).
+            function contains(a, b) {
+                return !(
+                    b.xMin < a.x1 ||
+                    b.yMin < a.y1 ||
+                    b.xMax > a.x2 ||
+                    b.yMax > a.y2
+                );
+            }
+            // Check if rectangle a overlaps rectangle b
+            // Each object (a and b) should have 2 properties to represent the
+            // top-left corner (x1, y1) and 2 for the bottom-right corner (x2, y2).
+            function overlaps(a, b) {
+                if (a.x1 >= b.xMax || a.y1 >= b.yMax || a.x2 <= b.xMin || a.y2 <= b.yMin){
+                    return false
+                }
+                else{
+                    return true
+                }
+            }
+            // Check if rectangle a touches rectangle b
+            // Each object (a and b) should have 2 properties to represent the
+            // top-left corner (x1, y1) and 2 for the bottom-right corner (x2, y2).
+            function touches(a, b) {
+                // has horizontal gap
+                if (a.x1 > b.xMax || b.xMin > a.x2) return false;
+
+                // has vertical gap
+                if (a.y1 > b.yMax || b.yMin > a.y2) return false;
+
+                return true;
+            } 
+            function rectanglesIntersect( 
+                minAx, minAy, maxAx, maxAy,
+                minBx, minBy, maxBx, maxBy 
+                ){
+                let aLeftOfB = maxAx < minBx;
+                let aRightOfB = minAx > maxBx;
+                let  aAboveB = minAy > maxBy;
+                let  aBelowB = maxAy < minBy;
+            
+                return !( aLeftOfB || aRightOfB || aAboveB || aBelowB );
+            }    
+            let touche = touches({x1,y1,x2,y2},{xMin,yMin,xMax,yMax});    
+            let overlap = overlaps({x1,y1,x2,y2},{xMin,yMin,xMax,yMax}); 
+            let contain = contains({x1,y1,x2,y2},{xMin,yMin,xMax,yMax});     
+            let inter = rectanglesIntersect(x1,y1,x2,y2,xMin,yMin,xMax,yMax);
+            if(touche || overlap || contain || inter){                        
+                if((x2-x1)*(y2-y1) > (xMax-xMin)*(yMax-yMin)){                    
+                    if(!(output[i][0] == x1 && output[i][1] == y1 && output[i][2] == x2 && output[i][3] == y2)){
+                        output[i][0] = x1;
+                        output[i][1] = y1;
+                        output[i][2] = x2;
+                        output[i][3] = y2;  
+                    }    
+                } 
+                return false                      
+            }else{
+                // this.#drawMotionBoxMotionCanvas(input);
+                //     this.#drawMotionBoxMotionCanvas(output[i]);
+                //     const {captureContext} = this;
+                //     captureContext.clearRect(0, 0, canvas.width, canvas.height);
             }
         }
+        return true
     }
 
     #drawMarkerCaptureCanvas(corners) {
@@ -276,7 +302,7 @@ const MotionDetector = class {
         let centerY = yMin + (Math.floor((yMax - yMin)/2));
         captureContext.fillStyle = motionBoxColor;
         captureContext.beginPath();
-        captureContext.arc(centerX,centerY, 3, 0, 2 * Math.PI);
+        captureContext.arc(centerX,centerY, 2, 0, 2 * Math.PI);
         captureContext.lineWidth = 1;        
         captureContext.strokeStyle = motionBoxColor;      
         captureContext.fill();  
@@ -293,7 +319,5 @@ const MotionDetector = class {
         const yMax = corners[3];
         captureContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
         captureContext.strokeStyle = motionBoxColor;
-
-        // console.log("xMin: ", xMin, "yMin: s", yMin, "xMax: ", xMax, "yMax: ", yMax);
     }
 }
