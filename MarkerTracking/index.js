@@ -1,11 +1,11 @@
-const MotionDetector = class {
+const MarkerTracking = class {
     constructor(settings) {
         this.stream = null;
         this.video = settings.videoRef || document.createElement("video");
 
         this.settings = {
             captureIntervalTime: settings.captureIntervalTime || 100,
-            motionBoxColor: settings.motionBoxColor || "#ff0000",
+            markerBoxColor: settings.markerBoxColor || "#ff0000",
             frameWidth: settings.frameWidth || 400,
             frameHeight: settings.frameHeight || 300,
             sensitivity: settings.sensitivity || 35,
@@ -293,18 +293,18 @@ const MotionDetector = class {
 
     #drawMarkerCaptureCanvas(corners) {
         const {captureContext} = this;
-        const {motionBoxColor} = this.settings;
+        const {markerBoxColor} = this.settings;
         const xMin = corners[0];
         const yMin = corners[1];
         const xMax = corners[2];
         const yMax = corners[3];
         let centerX = xMin + (Math.floor((xMax - xMin)/2));
         let centerY = yMin + (Math.floor((yMax - yMin)/2));
-        captureContext.fillStyle = motionBoxColor;
+        captureContext.fillStyle = markerBoxColor;
         captureContext.beginPath();
         captureContext.arc(centerX,centerY, 2, 0, 2 * Math.PI);
         captureContext.lineWidth = 1;        
-        captureContext.strokeStyle = motionBoxColor;      
+        captureContext.strokeStyle = markerBoxColor;      
         captureContext.fill();  
         captureContext.stroke();
     }   
@@ -312,12 +312,12 @@ const MotionDetector = class {
     #drawMotionBoxMotionCanvas(corners) {
         // drawing the motionbox in the corresponding context
         const {captureContext} = this;
-        const {motionBoxColor} = this.settings;
+        const {markerBoxColor} = this.settings;
         const xMin = corners[0];
         const yMin = corners[1];
         const xMax = corners[2];
         const yMax = corners[3];
         captureContext.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
-        captureContext.strokeStyle = motionBoxColor;
+        captureContext.strokeStyle = markerBoxColor;
     }
 }

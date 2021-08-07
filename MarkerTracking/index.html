@@ -28,29 +28,29 @@
             captureCanvasRef: document.getElementById("capture-canvas")
         };
     
-        const motionDetector = new MotionDetector(settings);
-        motionDetector.start();
+        const markerTracking = new MarkerTracking(settings);
+        markerTracking.start();
         
         const slider = document.getElementById("slider");
-        slider.addEventListener("change", () => motionDetector.settings.sensitivity = parseInt(slider.value));
+        slider.addEventListener("change", () => markerTracking.settings.sensitivity = parseInt(slider.value));
         slider.addEventListener("change", () => document.getElementById("sliderValue").innerHTML = slider.value);
 
-        // Min Flächeninhalt aus Slider auslesen
+        // min surface area from slider
         const sliderSurfaceArea = document.getElementById("sliderSurfaceArea");
-        sliderSurfaceArea.addEventListener("change", () => motionDetector.settings.minSurfaceArea = parseInt(sliderSurfaceArea.value));
+        sliderSurfaceArea.addEventListener("change", () => markerTracking.settings.minSurfaceArea = parseInt(sliderSurfaceArea.value));
         sliderSurfaceArea.addEventListener("change", () => document.getElementById("sliderValueSurfaceArea").innerHTML = sliderSurfaceArea.value);
 
-        // Farbe aus ColorPicker auslesen
+        // color from color picker
         const theInput = document.getElementById("kb_selected_color");
-        theInput.addEventListener("change", () => motionDetector.settings.color = theInput.value);
+        theInput.addEventListener("change", () => markerTracking.settings.color = theInput.value);
 
         theInput.addEventListener("input", function() {
-            // Farcode (Hex) schreiben
+            // write hex color code into label
             document.getElementById("hex").innerHTML = theInput.value;
 
-            // Farbvariable schreiben
+            // write color into program
             document.documentElement.style.setProperty('--kb-color',theInput.value);
-            () => motionDetector.settings.color = theInput.value;
+            () => markerTracking.settings.color = theInput.value;
         }, false);   
     </script>
     </body>
