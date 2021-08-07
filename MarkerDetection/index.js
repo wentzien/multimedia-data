@@ -21,6 +21,8 @@ const MotionDetector = class {
 
         captureCanvas.width = frameWidth;
         captureCanvas.height = frameHeight;
+
+        this.captureContext = this.captureCanvas.getContext("2d");
     }
 
     async start() {
@@ -114,7 +116,6 @@ const MotionDetector = class {
         if (result.length > 0) {
             for (let i = 0; i < result.length; i += 1) {                 
                 this.#drawMarkerCaptureCanvas(result[i]);
-                let ets = 'dsaf';
             }
         }
     }
