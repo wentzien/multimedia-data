@@ -12,7 +12,7 @@ const MotionDetector = class {
             color: settings.color || '#9dad4b',
             minSurfaceArea: settings.minSurfaceArea || 20
         };
-        this.imageArray = []; 
+        this.binaryMatrix = []; 
 
         const {frameWidth, frameHeight} = this.settings;            
 
@@ -80,7 +80,7 @@ const MotionDetector = class {
 
     #detectMarker(imageData) {
         const {sensitivity, frameWidth, color} = this.settings;
-        const {imageArray} = this; 
+        const {binaryMatrix: imageArray} = this; 
         let rgba = imageData.data;
 
         let targetRGB = this.#hexToRgb(color);
