@@ -2,13 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Image Difference</title>
 </head>
 <body>
+<!-- direct unprocessed video of the webcam -->
 <video id="webcam"></video>
+<!-- image from webcam previously captured in interval before -->
 <canvas id="oldImage"></canvas>
+<!-- latest image from webcam captured in current interval -->
 <canvas id="newImage"></canvas>
+<!-- calculated image difference -->
 <canvas id="diffImage"></canvas>
+
+<!-- javascript integration -->
 <script src="script.js"></script>
 </body>
 </html>
