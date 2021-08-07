@@ -12,17 +12,15 @@ const MotionDetector = class {
             color: settings.color || '#9dad4b',
             minSurfaceArea: settings.minSurfaceArea || 20
         };
+        this.imageArray = []; 
 
-        const {frameWidth, frameHeight} = this.settings;
-
-        this.imageArray = [];     
+        const {frameWidth, frameHeight} = this.settings;            
 
         this.captureCanvas = settings.captureCanvasRef || document.createElement("canvas");
         const {captureCanvas} = this;
 
         captureCanvas.width = frameWidth;
         captureCanvas.height = frameHeight;
-        this.captureContext = this.captureCanvas.getContext("2d");
     }
 
     async start() {
@@ -111,7 +109,7 @@ const MotionDetector = class {
             }         
         }
  
-        let result = this.#get_rectangle_coordinates(imageArray);
+        let result = this.#getRectangleCoordinates(imageArray);
 
         if (result.length > 0) {
             for (let i = 0; i < result.length; i += 1) {                 
@@ -121,7 +119,7 @@ const MotionDetector = class {
         }
     }
 
-    #get_rectangle_coordinates(a){
+    #getRectangleCoordinates(a){
         function findend(i,j,a,output,index){
             let x = a.length;
             let y = a[0].length;
