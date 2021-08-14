@@ -1,3 +1,4 @@
 .idea
-.venv
-/diff-image/node_modules
+marker-tracking/node_modules
+motion-detector/node_modules
+posenet/node_modules
